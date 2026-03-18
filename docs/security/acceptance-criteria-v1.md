@@ -8,7 +8,7 @@
 - 표기 규칙
   - **MUST**: MVP에서 반드시 통과해야 함(4주차 수직슬라이스 기준)
   - **SHOULD**: 6~7주차까지 목표(가능하면 앞당김)
-
+- 현재 AC-06, AC-07은 해결 완료
 ---
 
 ### AC-01. IDOR 방지(object-level auth)
@@ -55,6 +55,7 @@
     - CI 실행 로그에서 비밀 값이 마스킹되는지 확인
 
 ### AC-06. 감사로그/요청ID(증적)
+<img width="925" height="485" alt="image" src="https://github.com/user-attachments/assets/d8fbed0a-7e10-45da-9e2c-9e0be449079b" />
 
 - **MUST**: 모든 API 응답에 `x-request-id`가 포함되어야 한다.
 - **MUST**: 최소한 “누가(사용자), 무엇을(액션), 언제, 어떤 리소스(Job/File)”를 남길 수 있는 구조가 있어야 한다.
@@ -63,6 +64,7 @@
     - **기대 결과**: request_id가 연결되어 추적 가능
 
 ### AC-07. 오류 응답 안전성(내부 정보 비노출)
+<img width="907" height="416" alt="image" src="https://github.com/user-attachments/assets/444ca3b9-43ae-4b1a-861b-1976b1cc9a20" />
 
 - **MUST**: 500/예외 상황에서 스택트레이스/파일 경로/비밀값이 응답에 포함되면 안 된다.
   - **검증 방법**
