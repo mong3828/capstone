@@ -1,0 +1,247 @@
+#======================================================================
+# [ openapi.yaml ]
+# 작성자:     2376292 최승
+# 최종 수정:  2026.03.18
+#======================================================================
+
+openapi: 3.0.3
+info:
+  title: FlowGuard API (v1 draft)
+  version: 0.1.0
+  description: >
+    Week 1 draft. Endpoint list + auth/error shape are stabilized first,
+    implementation follows in later weeks.
+
+#======================================================================
+
+servers:
+  - url: http://127.0.0.1:8000
+
+#======================================================================
+
+tags:
+  - name: system
+  - name: auth
+  - name: storage
+  - name: jobs
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, request_id]
+          properties:
+            code:
+              type: string
+              example: INTERNAL_ERROR
+            message:
+              type: string
+              example: Unexpected server error.
+            request_id:
+              type: string
+              example: 9f1c3d6f2c0b4a3b8b4c0b3c2d1e0f9a
+  responses:
+    Unauthorized:
+      description: Missing/invalid token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Authenticated but not allowed (object-level auth)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+# !!실제 API 경로와 기능은 해당 부분 참조!!
+paths:
+  # 서버 상태 확인
+  /health:
+    get:
+      tags: [system]
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+
+  # 사용자 인증
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Login and issue JWT (v1)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [access_token, token_type, expires_in]
+                properties:
+                  access_token:
+                    type: string
+                  token_type:
+                    type: string
+                    example: bearer
+                  expires_in:
+                    type: integer
+                    example: 3600
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # 파일을 클라우드에 업로드할 수 있는 pre-signed 발급
+  /storage/upload-url:
+    post:
+      tags: [storage]
+      summary: Issue a pre-signed upload URL (v1)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [filename, content_type]
+              properties:
+                filename:
+                  type: string
+                content_type:
+                  type: string
+      responses:
+        "200":
+          description: URL issued
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [upload_url, object_key, expires_in]
+                properties:
+                  upload_url:
+                    type: string
+                  object_key:
+                    type: string
+                  expires_in:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # 업로드된 파일에 워터마킹 수행을 지시하고 작업 번호 할당
+  /jobs:
+    post:
+      tags: [jobs]
+      summary: Create a Job from an uploaded object (v1)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [source_object_key]
+              properties:
+                source_object_key:
+                  type: string
+      responses:
+        "201":
+          description: Job created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [job_id, status]
+                properties:
+                  job_id:
+                    type: string
+                  status:
+                    type: string
+                    example: Queued
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # 워터마킹 작업의 현재 진행 상태, 정보 조회
+  /jobs/{job_id}:
+    get:
+      tags: [jobs]
+      summary: Get Job (object-level auth)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job detail
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # 워터마킹이 완료된 파일을 다운로드 할 수 있는 pre-signed 발급
+  /jobs/{job_id}/download-url:
+    post:
+      tags: [jobs]
+      summary: Issue a pre-signed download URL for Job result
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: URL issued
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [download_url, expires_in]
+                properties:
+                  download_url:
+                    type: string
+                  expires_in:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+#======================================================================

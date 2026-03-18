@@ -1,0 +1,64 @@
+#======================================================================
+# [ CI.yml ]
+# 작성자:     2376292 최승
+# 최종 수정:  2026.03.18
+#======================================================================
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # 1단계: 서버 상태 확인
+  backend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 졸업프로젝트/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install backend (dev)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Run tests
+        run: pytest -q
+
+  # 2단계: app 폴더에 저장된 파이썬 파일들을 검사해 취약점 검사(예-중요값 하드코딩 등)
+  bandit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 졸업프로젝트/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Bandit
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install bandit
+      - name: Bandit security scan
+        run: bandit -r app -q
+
+# 3단계: 프로젝트 폴더 전체를 스캔해 취약점 검사
+  trivy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: "졸업프로젝트"
+          severity: "HIGH,CRITICAL"
+          exit-code: "1"
+          ignore-unfixed: true
+          format: "table"
+
