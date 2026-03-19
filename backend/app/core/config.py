@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     ENV: str = "local"
     # 로그응 어느 수준까지 출력할지 결정하는 값
     LOG_LEVEL: str = "INFO"
+    # (임시)DB 주소: 서버가 SQLite 모드로 작동하도록 설정
+    DATABASE_URL: str = "sqlite:///./data/app.db"
 
 settings = Settings()
 

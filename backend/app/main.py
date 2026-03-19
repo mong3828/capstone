@@ -1,7 +1,7 @@
 #======================================================================
 # [ main.py ]
 # 작성자:     2376292 최승
-# 최종 수정:  2026.03.18
+# 최종 수정:  2026.03.19
 #======================================================================
 
 from fastapi import FastAPI, Request
@@ -10,6 +10,11 @@ from fastapi.responses import JSONResponse
 # ./app/core 경로의 config.py, logging.py 파일 import(해당 파일에 각 기능에 대한 자세한 설명 존재)
 from app.core.config import settings
 from app.core.logging import configure_logging, get_request_id, set_request_id
+
+# db.py 파일의 init_db 메서드를 import해 서버 시작시 DB 테이블 생성 및 사전 작업을 수행
+from app.db import init_db
+# jobs.py에 만들어둔 API 기능들을 import
+from app.api.routes.jobs import router as jobs_router
 
 #======================================================================
 
@@ -55,10 +60,17 @@ def create_app() -> FastAPI:
     async def health():
         return {"status": "ok", "service": "flowguard-api", "env": settings.ENV}
 
+    #  FastAPI 객체(app)에 jobs.py에서 만든 라우터를 추가
+    app.include_router(jobs_router)
+
     return app
 
 #======================================================================
 
 app = create_app()
 
+# 서버가 처음 가동될 떄(statup) 로컬 DB 초기화 (DB 테이블 생성)
+@app.on_event("startup")
+def _startup() -> None:
+    init_db()
 #======================================================================
