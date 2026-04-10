@@ -1,0 +1,17 @@
+# Docker 이미지 빌드 검증 (PR/푸시 시 Dockerfile이 깨지지 않았는지 확인)
+name: Docker build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t b2mark-api:ci .

@@ -1,0 +1,57 @@
+# 후속 주차에서 프로젝트 패키징 작업시 setuptools 사용 예정
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+# =================================================================================
+
+# 프로젝트 정보 및 필수 라이브러리
+[project]
+name = "b2mark"
+version = "0.6.0"
+description = "B2MARK 워터마킹·검출"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "fastapi>=0.109",
+    "mangum>=0.17",
+    "uvicorn[standard]>=0.27",
+    "python-multipart>=0.0.9",
+    "web3>=6.0",
+    "eth-abi>=4.0",
+    "eth-utils>=2.0",
+]
+
+# =================================================================================
+
+# 개발 환경에 사용되는 추가 도구
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",  # 단위 테스트를 위해 필요한 라이브러리
+    "bandit[toml]>=1.7",    # 코드 취약점 검사 라이브러리
+    "httpx>=0.26",  # api 테스트 중 TestClient 기능을 사용하므로 설치 필요
+    "pyinstaller>=6.0", # 실행파일 패키징 작업을 위해 필요
+]
+
+# =================================================================================
+
+# CLI 환경 명령어 설정
+[project.scripts]
+watermark = "cli.main:main" # 터미널에 'watermark' 입력시 /cli/main.py 파일 실행
+
+# =================================================================================
+
+# 이하 각종 개발 도구 세부 설정
+[tool.setuptools.packages.find] # (setuptools) 패키징 작업 대상 폴더 지정
+where = ["."]
+include = ["core*", "cli*", "api*"] 
+
+[tool.pytest.ini_options]   # (pytest) pytest가 테스트 작업시 실행할 테스트 코드 경로 지정
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+
+[tool.bandit]   # (bandit) bandit의 취약점 분석 대상애서 제외할 폴더 지정
+exclude_dirs = ["tests", ".venv"]

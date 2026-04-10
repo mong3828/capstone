@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Node / Hardhat (7주차 스마트 컨트랙트)
+node_modules/
+cache-hardhat/
+artifacts-hardhat/
+
+# Local data
+*.csv
+!tests/fixtures/**/*.csv
+
+# 알고리즘 실험용 임시 디렉터리 (커밋 제외)
+watermark_sandbox/
+
+# Markdown: 저장소 루트의 README.md만 추적 (GitHub 메인 표시). 그 외 *.md는 커밋 제외.
+**/*.md
+!README.md

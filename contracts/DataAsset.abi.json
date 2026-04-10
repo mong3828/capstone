@@ -1,0 +1,24 @@
+[
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "dataHash", "type": "bytes32" },
+      { "internalType": "string", "name": "metadataUri", "type": "string" },
+      { "internalType": "bytes", "name": "signature", "type": "bytes" }
+    ],
+    "name": "mint",
+    "outputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "to", "type": "address" },
+      { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+      { "indexed": true, "internalType": "bytes32", "name": "dataHash", "type": "bytes32" },
+      { "indexed": false, "internalType": "string", "name": "metadataURI", "type": "string" }
+    ],
+    "name": "DataAssetMinted",
+    "type": "event"
+  }
+]
