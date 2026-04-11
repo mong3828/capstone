@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import core.env_bootstrap  # noqa: F401
+
 import argparse
 import json
 import sys
@@ -44,7 +46,7 @@ def build_parser() -> argparse.ArgumentParser:
     #   --buyer-id: 구매자 ID (예: 10110) (필수)
     #   --target: 워터마킹을 적용할 타겟 열 이름 (예: price) (필수)
     #   --ref-cols: 고유키를 만들 때 쓸 기준 열들로, 쉼표로 표기 (예: area,floor) (필수)
-    #   -k, --secret-key: 비밀키 (기본값: grad_project_key)
+    #   -k, --secret-key: 비밀키 (미입력 시 B2MARK_WATERMARK_SECRET_KEY)
     '''
     명령어 예시: python -m cli insert -i data/test.csv -o data/tested.csv --buyer-id 11001 --target price --ref-cols area,floor -k my_super_secret
     해석: test.csv 파일의 area와 floor를 기준으로 price 열에 워터마크 11001을 삽입해라
@@ -70,8 +72,8 @@ def build_parser() -> argparse.ArgumentParser:
     pi.add_argument(
         "-k",
         "--secret-key",
-        default="grad_project_key",
-        help="비밀키 (기본: grad_project_key)",
+        default=None,
+        help="비밀키 (미입력 시 환경변수 B2MARK_WATERMARK_SECRET_KEY)",
     )
     pi.add_argument("--k-segments", type=int, default=10, dest="k", help="값 구간 개수 k (기본 10)")
     pi.add_argument("--g", type=int, default=3, help="선별 분모 g (기본 3)")
@@ -124,8 +126,8 @@ def build_parser() -> argparse.ArgumentParser:
     #   --metadata-uri: 발급될 NFT의 이름, 이미지, 설명 등의 메타데이터 주소 (필수)
     #   --rpc-url: 블록체인 네트워크(테스트넷)의 주소
     #   --contract: 스마트 컨트랙트의 주소
-    #   --signer-key: 서버의 비밀키
-    #   --minter-key: gas를 지불하고 NFT를 받을 신청자의 비밀키 (생략시 서버의 비밀키 사용)
+    #   --signer-key: 서명용 (기본 B2MARK_ADMIN_PRIVATE_KEY)
+    #   --minter-key: 가스·수령 계정 (기본 B2MARK_USER_PRIVATE_KEY, 없으면 ADMIN 과 동일)
 
     pm = sub.add_parser("mint", help="SHA-256 커밋 해시로 NFT mint (테스트넷)")
     pm.add_argument(
@@ -158,13 +160,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pm.add_argument(
         "--signer-key",
-        default=os.environ.get("B2MARK_SIGNER_PRIVATE_KEY"),
-        help="authorizedSigner 개인키 (기본: B2MARK_SIGNER_PRIVATE_KEY)",
+        default=os.environ.get("B2MARK_ADMIN_PRIVATE_KEY"),
+        help="서명용 개인키 (기본: B2MARK_ADMIN_PRIVATE_KEY)",
     )
     pm.add_argument(
         "--minter-key",
-        default=os.environ.get("B2MARK_MINTER_PRIVATE_KEY"),
-        help="가스를 낼 minter 개인키 (미지정 시 signer-key 와 동일)",
+        default=os.environ.get("B2MARK_USER_PRIVATE_KEY"),
+        help="가스를 낼 minter 개인키 (기본: B2MARK_USER_PRIVATE_KEY, 비우면 ADMIN 키 사용)",
     )
     return p
 
@@ -188,10 +190,18 @@ def cmd_insert(args: argparse.Namespace) -> int:
     if not ref_cols:
         print("error: --ref-cols 에 최소 한 개의 열 이름이 필요합니다.", file=sys.stderr)
         return 1
-    
+
+    sk = (args.secret_key or "").strip() or os.environ.get("B2MARK_WATERMARK_SECRET_KEY", "").strip()
+    if not sk:
+        print(
+            "error: --secret-key 또는 환경변수 B2MARK_WATERMARK_SECRET_KEY 가 필요합니다.",
+            file=sys.stderr,
+        )
+        return 1
+
     # watermark.py에서 정의한 WatermarkOptions 클래스를 통해 워터마킹에 필요한 값들 전달(비밀키, k값, g값 등)
     opts = WatermarkOptions(
-        secret_key=args.secret_key,
+        secret_key=sk,
         buyer_bitstring=args.buyer_id,
         target_col=args.target,
         ref_cols=ref_cols,
@@ -278,17 +288,19 @@ def cmd_hash(args: argparse.Namespace) -> int:
 def cmd_mint(args: argparse.Namespace) -> int:
     rpc = args.rpc_url
     contract = args.contract_address
-    signer_key = args.signer_key
-    minter_key = args.minter_key or signer_key
+    signer_key = (args.signer_key or "").strip()
+    minter_key = ((args.minter_key or "").strip() or signer_key)
 
     # 민팅 작업에 필요한 데이터 중 누락된 데이터가 있는지 확인
-    if not rpc or not contract or not signer_key or not minter_key:
+    if not rpc or not contract or not signer_key:
         print(
-            "error: --rpc-url, --contract, --signer-key, --minter-key "
-            "(또는 해당 B2MARK_* 환경변수)가 모두 필요합니다.",
+            "error: --rpc-url, --contract, --signer-key "
+            "(또는 B2MARK_RPC_URL, B2MARK_CONTRACT_ADDRESS, B2MARK_ADMIN_PRIVATE_KEY)가 필요합니다.",
             file=sys.stderr,
         )
         return 2
+    if not minter_key:
+        minter_key = signer_key
     
     # NFT 발급을 위해 필요한 데이터셋 지문 확보
     # 1. 사용자가 데이터셋 지문을 제공한 경우 형식 검사

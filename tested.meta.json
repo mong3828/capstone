@@ -1,0 +1,13 @@
+{
+  "min": 15002.0,
+  "max": 119994.5,
+  "seed": 10000,
+  "buyer_bitstring": "01010",
+  "target_col": "price",
+  "ref_cols": [
+    "area",
+    "floor"
+  ],
+  "k": 10,
+  "g": 3
+}

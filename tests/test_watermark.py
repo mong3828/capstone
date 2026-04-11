@@ -50,6 +50,7 @@ def test_detect_requires_metadata(tmp_path: Path):
     p = tmp_path / "a.csv"
     pd.DataFrame({"price": [1.0], "area": [1], "floor": [1]}).to_csv(p, index=False)
     opts = WatermarkOptions(
+        secret_key="k",
         buyer_bitstring="1",
         target_col="price",
         ref_cols=("area", "floor"),

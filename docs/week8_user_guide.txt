@@ -2,64 +2,63 @@
 B2MARK 8주차 — 사용자(직접 수행) 작업 가이드
 ================================================================================
 코드 저장소에 포함된 `watermark mint` 는 RPC·컨트랙트·개인키가 있으면 동작합니다.
-아래는 **본인이 AWS/테스트넷/지갑에서 해야 하는 작업**입니다.
+환경변수 이름은 `.env.example` 과 동일하게 맞추는 것을 권장합니다.
 
 --------------------------------------------------------------------------------
 1. 테스트넷(Sepolia 등) 준비
 --------------------------------------------------------------------------------
-  • MetaMask(또는 동일한 주소 체계)로 테스트넷 계정 1~2개 생성
-  • Faucet 으로 테스트 ETH 확보 (가스비)
-  • 공개 RPC URL 확보 (예: Alchemy / Infura / 공개 엔드포인트)
-    → 환경변수 예: B2MARK_RPC_URL=https://sepolia.infura.io/v3/<PROJECT_ID>
+  • MetaMask(또는 동일한 주소 체계)로 테스트넷 계정 생성
+  • Faucet 으로 테스트 ETH 확보 (가스비) — **B2MARK_ADMIN_PRIVATE_KEY** 지갑에 입금
+  • RPC URL → `.env` 의 B2MARK_RPC_URL
 
 --------------------------------------------------------------------------------
 2. DataAsset 컨트랙트 배포
 --------------------------------------------------------------------------------
-  • 7주차 Hardhat 프로젝트로 `contracts/DataAsset.sol` 배포
-  • 생성자 인자: (initialOwner, authorizedSigner)
-      - authorizedSigner: 백엔드/팀이 서명에 쓸 지갑 주소 (오프체인 서명용)
-      - initialOwner: 컨트랙트 owner (setAuthorizedSigner 등)
-  • 배포 후 **컨트랙트 주소**를 기록
-    → B2MARK_CONTRACT_ADDRESS=0x...
+  • `.env.example` 을 복사해 `.env` 를 만들고 최소한 다음을 채웁니다:
+      B2MARK_RPC_URL
+      B2MARK_ADMIN_PRIVATE_KEY  (Sepolia ETH 가 있는 지갑 하나로 통일)
+  • Hardhat 은 `hardhat.config.js` 에서 `B2MARK_ADMIN_PRIVATE_KEY` 만 배포·가스에 사용합니다.
+  • 배포 스크립트 `scripts/deploy_DataAsset.js` 는 **owner·authorizedSigner 를 모두
+    배포 지갑 주소(ADMIN 주소)로 동일 설정**합니다. 계정을 여러 개로 쪼개지 않습니다.
+  • 배포 명령 (프로젝트 루트 B2MARK):
+      npx hardhat compile
+      npx hardhat run scripts/deploy_DataAsset.js --network sepolia
+  • 출력된 주소를 B2MARK_CONTRACT_ADDRESS 에 기록
 
 --------------------------------------------------------------------------------
-3. mint 에 필요한 키 역할
+3. mint 에 필요한 키 (CLI)
 --------------------------------------------------------------------------------
-  • B2MARK_SIGNER_PRIVATE_KEY
-      - 컨트랙트의 `authorizedSigner` 와 **쌍을 이루는 개인키**
-      - 이 키로 structHash 에 EIP-191 서명을 만들어 mint 인자 `signature` 생성
-  • B2MARK_MINTER_PRIVATE_KEY (선택, 없으면 signer 와 동일)
-      - 실제 트랜잭션을 보내는 계정 (가스비 지불)
-      - **반드시 테스트넷 ETH**가 있어야 함
-  • 보안: 개인키를 저장소·채팅에 넣지 말 것. 로컬 환경변수 또는 비밀 관리 도구만 사용.
+  • B2MARK_ADMIN_PRIVATE_KEY (필수)
+      - 컨트랙트의 `authorizedSigner` 와 짝이 맞는 개인키 (배포 시 동일 지갑이면 그대로)
+      - structHash 에 EIP-191 서명 생성
+  • B2MARK_USER_PRIVATE_KEY (선택)
+      - 실제 mint 트랜잭션 가스를 낼 **다른** 지갑을 쓸 때만 설정
+      - 비우면 ADMIN 키로 서명·결제 모두 수행
+  • 보안: 개인키를 저장소·채팅에 넣지 말 것.
 
 --------------------------------------------------------------------------------
-4. CLI 실행 예시 (워터마크 파일 → 해시 → mint)
+4. CLI 실행 예시
 --------------------------------------------------------------------------------
-  1) 워터마크 결과 CSV 가 있다고 가정 (또는 일반 파일)
-  2) 환경변수 설정 후:
+  .env 에 RPC/컨트랙트/ADMIN 키를 넣은 뒤:
 
      watermark mint -i 결과.csv --metadata-uri ipfs://Qm.../meta.json
 
-     또는 해시만 직접 지정:
+  해시만 넣을 때:
 
      watermark mint --data-hash <64자리hex> --metadata-uri ipfs://...
-
-  3) 성공 시 `tx_hash`, `status`, `token_id`(이벤트 파싱 성공 시) 출력
 
 --------------------------------------------------------------------------------
 5. E2E 데모 영상 (8주차 산출물)
 --------------------------------------------------------------------------------
-  • 로컬에서: insert → hash → mint 까지 한 흐름을 녹화
-  • 블록 익스플로러에서 tx_hash / tokenId / owner 확인 화면 포함 권장
+  • insert → hash → mint 흐름 녹화
+  • 익스플로러에서 tx / tokenId / owner 확인 화면 권장
 
 --------------------------------------------------------------------------------
 6. 문제 해결
 --------------------------------------------------------------------------------
-  • RPC 연결 실패: URL·방화벽·API 키 확인
-  • invalid signature: authorizedSigner 주소와 SIGNER 키가 짝이 맞는지,
-    minter 주소가 서명에 포함된 structHash 와 일치하는지 확인
-  • 가스/수수료 오류: Sepolia EIP-1559 정책에 맞게 수수료 필드 조정이 필요할 수 있음
-    (필요 시 `core/onchain.py` 의 트랜잭션 빌드 부분을 팀 환경에 맞게 수정)
+  • RPC 연결 실패: B2MARK_RPC_URL 확인
+  • invalid signature: 배포 시 authorizedSigner 가 ADMIN 주소와 같은지, mint 시
+    서명 키가 그 주소와 짝인지 확인
+  • 가스 오류: EIP-1559 등은 필요 시 `core/onchain.py` 트랜잭션 빌드 조정
 
 ================================================================================

@@ -5,7 +5,10 @@
 
 from __future__ import annotations
 
+import core.env_bootstrap  # noqa: F401 — 프로젝트 루트 .env 로드
+
 import logging
+import os
 import tempfile     # 파일 데이터를 한시적으로 읽고 쓰기 위한 임시 파일 생성을 위해 import
 from pathlib import Path
 
@@ -75,7 +78,10 @@ def post_watermark(
     buyer_id: str = Form(..., description="구매자 비트열"),
     target: str = Form(..., description="워터마크 대상 열"),
     ref_cols: str = Form(..., description="참조 열, 쉼표 구분"),
-    secret_key: str = Form("grad_project_key"),
+    secret_key: str | None = Form(
+        default=None,
+        description="워터마크 비밀키 (미입력 시 B2MARK_WATERMARK_SECRET_KEY)",
+    ),
     k: int = Form(10, description="구간 개수 k"),
     g: int = Form(3, description="선별 분모 g"),
     embed_seed: int = Form(10000, description="Green zone 시드"),
@@ -85,7 +91,14 @@ def post_watermark(
     ref_tuple = _parse_ref_cols(ref_cols)
     if not ref_tuple:
         raise HTTPException(status_code=400, detail="ref_cols 에 최소 한 개의 열이 필요합니다.")
-    
+
+    effective_secret = (secret_key or "").strip() or os.environ.get("B2MARK_WATERMARK_SECRET_KEY", "").strip()
+    if not effective_secret:
+        raise HTTPException(
+            status_code=400,
+            detail="secret_key 폼 값 또는 환경변수 B2MARK_WATERMARK_SECRET_KEY 가 필요합니다.",
+        )
+
     # 데이터 파일이 용량 제한을 통과하면 raw 변수에 바이트 형태로 저장
     raw = _read_upload_limited(file)
 
@@ -132,7 +145,7 @@ def post_watermark(
 
         # /core/watermark.py에서 정의한 워터마킹 기능 호출, 워터마킹 수행(insert)
         opts = WatermarkOptions(
-            secret_key=secret_key,
+            secret_key=effective_secret,
             buyer_bitstring=buyer_id,
             target_col=target,
             ref_cols=ref_tuple,

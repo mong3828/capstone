@@ -278,11 +278,10 @@ def detect(
 
 
 # 워터마킹에 사용되는 설정값을 세팅하는 클래스
-#   비밀키, 구간분할에 사용되는 k값, 워터마킹 적용 비율을 나타내는 g값 등의 값을 세팅해줌
-#   현재는 테스트를 위해 해당 값들을 하드코딩 해놓았으나, 추후 외부에서 제공받는 형식으로 수정 예정
+#   secret_key 는 호출부에서 반드시 넣거나, CLI/API 가 B2MARK_WATERMARK_SECRET_KEY 에서 읽어 전달
 @dataclass(frozen=True, slots=True)
 class WatermarkOptions:
-    secret_key: str = "grad_project_key"
+    secret_key: str = ""
     buyer_bitstring: str | None = None
     target_col: str | None = None
     ref_cols: tuple[str, ...] | None = None
@@ -305,6 +304,8 @@ class DetectionResult:
 
 # 워터마킹 작업 전 구매자 ID, 워터마킹을 적용할 열, 기준 열 중 빠진 부분이 있는지 검사하는 함수
 def _validate_options(options: WatermarkOptions) -> tuple[str, str, list[str]]:
+    if not options.secret_key:
+        raise ValueError("secret_key 는 필수입니다.")
     if not options.buyer_bitstring or not options.target_col or not options.ref_cols:
         raise ValueError("buyer_bitstring, target_col, ref_cols 는 필수입니다.")
     return options.buyer_bitstring, options.target_col, list(options.ref_cols)

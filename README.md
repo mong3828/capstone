@@ -39,9 +39,12 @@ B2MARK/
 
 ```powershell
 cd B2MARK
+copy .env.example .env
+# .env 에 B2MARK_WATERMARK_SECRET_KEY 등 필요한 값을 채움 (Git 에 올리지 않음)
 python -m pip install -e ".[dev]"
+npm install
 python -m pytest
-python -m bandit -r core cli -ll
+python -m bandit -r core cli api -q -ll
 watermark --version
 ```
 
@@ -56,13 +59,10 @@ npx hardhat test
 
 ### 온체인 mint (8주차)
 
-```powershell
-# 테스트넷 배포 후 환경변수 설정 (예: Sepolia)
-$env:B2MARK_RPC_URL="https://..."
-$env:B2MARK_CONTRACT_ADDRESS="0x..."
-$env:B2MARK_SIGNER_PRIVATE_KEY="0x..."
-$env:B2MARK_MINTER_PRIVATE_KEY="0x..."   # 생략 시 signer 와 동일
+`.env` 에 `B2MARK_RPC_URL`, `B2MARK_CONTRACT_ADDRESS`, `B2MARK_ADMIN_PRIVATE_KEY` 를 두고,
+(선택) `B2MARK_USER_PRIVATE_KEY` 로 민팅 가스만 다른 지갑에 둘 수 있습니다.
 
+```powershell
 watermark mint -i .\out.csv --metadata-uri ipfs://Qm.../meta.json
 ```
 

@@ -76,6 +76,7 @@ def test_watermark_413_too_large(monkeypatch):
             "buyer_id": "1",
             "target": "a",
             "ref_cols": "a",
+            "secret_key": "k",
         },
     )
     # 서버가 파일 크기 초과 에러를 리턴하는지 확인
@@ -93,6 +94,7 @@ def test_watermark_400_bad_csv():
             "buyer_id": "1",
             "target": "x",
             "ref_cols": "a",
+            "secret_key": "k",
         },
     )
     # 서버가 에러코드 400을 반환하는지 확인
@@ -113,6 +115,7 @@ def test_watermark_400_csv_injection():
             "buyer_id": "1",
             "target": "b",
             "ref_cols": "a",
+            "secret_key": "k",
         },
     )
     assert r.status_code == 400
