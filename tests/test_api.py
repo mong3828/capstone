@@ -120,5 +120,5 @@ def test_watermark_400_csv_injection():
     )
     assert r.status_code == 400
     body = r.json()
-    detail = body.get("detail") if isinstance(body, dict) else str(body)
-    assert "인젝션" in str(detail)
+    msg = body.get("error", {}).get("message", "") if isinstance(body, dict) else str(body)
+    assert "인젝션" in str(msg)

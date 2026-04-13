@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>B2MARK API tester (no styling)</title>
+  <!-- API: uvicorn api.main:app --reload --host 127.0.0.1 --port 8000 -->
+  <!-- UI:  cd webtest && python -m http.server 8765 -->
+  <!-- Open http://127.0.0.1:8765/ — MetaMask Sepolia(11155111) -->
+</head>
+<body>
+  <p>API base <input id="apiBase" size="40" value="http://127.0.0.1:8000" /></p>
+  <p>
+    <button type="button" id="btnHealth">GET /health</button>
+    <button type="button" id="btnConnect">MetaMask 연결 + Sepolia 확인</button>
+  </p>
+  <p>지갑 <input id="wallet" size="50" readonly /></p>
+  <p>
+    <button type="button" id="btnNonce">POST /auth/nonce</button>
+    <button type="button" id="btnLogin">signMessage 후 POST /auth/login</button>
+  </p>
+  <p>
+    <button type="button" id="btnRefresh">POST /auth/refresh</button>
+    <button type="button" id="btnLogout">POST /auth/logout</button>
+  </p>
+  <p>
+    <button type="button" id="btnMeGet">GET /users/me</button>
+    <button type="button" id="btnMePatch">PATCH /users/me (이름)</button>
+    이름 <input id="patchName" value="Tester" />
+  </p>
+  <p>
+    <button type="button" id="btnNftCreate">POST /nfts</button>
+    NFT 이름 <input id="nftName" value="테스트 NFT" />
+  </p>
+  <p>
+    <button type="button" id="btnNftList">GET /nfts</button>
+    page <input id="page" type="number" value="1" style="width:4em" />
+    pageSize <input id="pageSize" type="number" value="20" style="width:4em" />
+    status <input id="nftStatus" placeholder="DRAFT" />
+    chainId <input id="chainId" type="number" value="11155111" style="width:7em" />
+  </p>
+  <p>NFT id <input id="nftId" size="40" /></p>
+  <p><button type="button" id="btnNftGet">GET /nfts/{id}</button></p>
+  <p>
+    <button type="button" id="btnNftPatch">PATCH /nfts/{id} (민팅 메타 샘플)</button>
+  </p>
+  <p>
+    <button type="button" id="btnWatermarkAnon">POST /watermark (비로그인)</button>
+    CSV 파일 <input type="file" id="wmFile" accept=".csv,text/csv" />
+    buyer_id <input id="wmBuyer" value="101" size="8" />
+    target <input id="wmTarget" value="price" size="8" />
+    ref_cols <input id="wmRef" value="area,floor" size="16" />
+    secret_key <input id="wmSecret" value="k" size="8" />
+  </p>
+  <p>
+    <button type="button" id="btnWatermarkNft">POST /nfts/{id}/watermark</button>
+  </p>
+  <hr />
+  <pre id="out"></pre>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

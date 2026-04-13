@@ -11,32 +11,43 @@ ENV/
 .mypy_cache/
 .ruff_cache/
 *.egg-info/
+.eggs/
 dist/
 build/
+htmlcov/
+.coverage
+coverage.xml
+*.cover
 
-# Secrets / local env (복사용 템플릿은 .env.example 만 커밋)
+# Secrets / 자격 증명 (공개 저장소에 부적합)
 .env
 .env.local
 .env.*.local
+*.pem
+*.p12
+id_rsa
+id_rsa.pub
 
-# OS / IDE
+# OS / IDE / Cursor (저장소와 무관한 로컬 설정)
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
+.cursor/
 
-# Node / Hardhat (7주차 스마트 컨트랙트)
+# Node / Hardhat
 node_modules/
 cache-hardhat/
 artifacts-hardhat/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Local data
+# 로컬 데이터·실험 (용량·민감 데이터)
 *.csv
 !tests/fixtures/**/*.csv
-
-# 알고리즘 실험용 임시 디렉터리 (커밋 제외)
 watermark_sandbox/
 
-# Markdown: 저장소 루트의 README.md만 추적 (GitHub 메인 표시). 그 외 *.md는 커밋 제외.
-**/*.md
-!README.md
+# 팀 정책: 메인 README 및 docs 는 이 저장소에 포함하지 않음
+README.md
+docs/

@@ -1,10 +1,10 @@
 # =================================================================================
-# 파일명:   conftest.py
-# 목적:     .env 로드 테스트
+# 목적:     pytest 로드 시 JWT·DB 환경 (api.database import 전에 적용)
 # =================================================================================
 
 from __future__ import annotations
 
-import core.env_bootstrap  # noqa: F401
+import os
 
-# !!!noqa: F401 주석은 삭제하면 안됨! 삭제시 환경변수가 정상적으로 로드되지 않는 경우가 발생함
+os.environ.setdefault("B2MARK_JWT_SECRET", "pytest-b2mark-jwt-secret-key-min-32")
+os.environ.setdefault("B2MARK_DATABASE_URL", "sqlite:///:memory:")
