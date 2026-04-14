@@ -1,6 +1,6 @@
 # =================================================================================
 # 파일명:   auth.py
-# 목적:     nonce, login, refresh, logout 기능 구현
+# 목적:     nonce / login / refresh / logout 4가지 auth기능 구현
 # =================================================================================
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from api.database import get_db
+from api.datetime_utils import ensure_utc
 from api.errors import AppError
 from api.models import LoginNonce, RefreshToken, User
 from api.schemas import LoginRequest, LogoutRequest, NonceRequest, NonceResponse, RefreshRequest, TokenPairResponse
@@ -38,6 +39,14 @@ NONCE_TTL = timedelta(minutes=15)
 
 # POST /auth/nonce
 # 무작위 난수(nonce)와 msg(유저가 서명해야 하는 데이터)를 생성해 프론트에게 전달하는 함수
+'''
+출력 예시
+{
+  "nonce": "d43b9cd2a1a047f5a8c16e0edd9f3a62",
+  "message": "B2MARK 로그인 요청\n지갑: 0x33403E93FeDD45250CB32bdc35B2D782A871a19e\nnonce: d43b9cd2a1a047f5a8c16e0edd9f3a62\n만료(UTC): 2026-04-13T01:49:09.801963+00:00",
+  "expiresAt": "2026-04-13T01:49:09.801963Z"
+}
+'''
 @router.post("/nonce", response_model=NonceResponse)
 def post_nonce(body: NonceRequest, db: Session = Depends(get_db)) -> NonceResponse:
     # 프론트로부터 유저의 메타마스크 지갑 주소를 전달받아 규격에 맞는지 검사
@@ -72,11 +81,23 @@ def post_nonce(body: NonceRequest, db: Session = Depends(get_db)) -> NonceRespon
     return NonceResponse(nonce=nonce, message=msg, expires_at=expires_at)
 
 
+# ---------------------------------------------------------------------------------
+
+
 # POST /auth/login
-# 
+# 프론트로부터 전달받은 msg와 nonce의 유효성을 검사하여 유저 로그인 및 회원가입을 담당
+'''
+출력 예시
+{
+  "ok": true,
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5…",
+  "refreshToken": "342h-43_0iO6gNts3PYxhPiX…"
+}
+'''
 @router.post("/login", response_model=TokenPairResponse)
 def post_login(body: LoginRequest, db: Session = Depends(get_db)) -> TokenPairResponse:
     # 프론트로부터 유저의 메타마스크 지갑 주소를 전달받아 규격에 맞는지 검사
+    # 이때 웹에서 실제 메타마스크를 호출해 유저의 서명을 요청함
     try:
         wallet = normalize_wallet(body.wallet_address)
     except ValueError as e:
@@ -139,22 +160,41 @@ def post_login(body: LoginRequest, db: Session = Depends(get_db)) -> TokenPairRe
     )
 
 
+# ---------------------------------------------------------------------------------
+
+
+# POST /auth/refresh
+# 프론트로부터 전달받은 리프레시 토큰의 유효성을 검사하고 새 리프레시 토큰과 인증 토큰을 발급하는 함수
+'''
+출력 예시
+{
+  "refreshed": true
+}
+'''
 @router.post("/refresh", response_model=TokenPairResponse)
 def post_refresh(body: RefreshRequest, db: Session = Depends(get_db)) -> TokenPairResponse:
+    # 프론트로부터 정상적인 형태의 리프레시 토큰을 받았는지 확인
     token = (body.refresh_token or "").strip()
     if not token:
         raise AppError("BAD_REQUEST", "refreshToken 이 필요합니다.", 400)
-
+    
+    # 현재 시간 불러오기
     now = datetime.now(timezone.utc)
-    rt = db.scalars(select(RefreshToken).where(RefreshToken.token == token).limit(1)).first()
-    if rt is None or rt.revoked or rt.expires_at <= now:
-        raise AppError("UNAUTHORIZED", "유효하지 않은 리프레시 토큰입니다.", 401)
 
+    # 리프레시 토큰이 폐기되거나 만료되었는지 확인
+    rt = db.scalars(select(RefreshToken).where(RefreshToken.token == token).limit(1)).first()
+    if rt is None or rt.revoked or ensure_utc(rt.expires_at) <= now:
+        raise AppError("UNAUTHORIZED", "유효하지 않은 리프레시 토큰입니다.", 401)
+    
+    # 사용자 계정이 활성 상태인지 확인
     user = db.get(User, rt.user_id)
     if user is None or user.status != "ACTIVE":
         raise AppError("UNAUTHORIZED", "사용자를 찾을 수 없습니다.", 401)
-
+    
+    # 검사가 완료된 리프레시 토큰을 폐기
     rt.revoked = True
+
+    # 새 리프레시 토큰 발급
     new_plain = create_refresh_token_string()
     new_rt = RefreshToken(
         user_id=user.id,
@@ -164,8 +204,9 @@ def post_refresh(body: RefreshRequest, db: Session = Depends(get_db)) -> TokenPa
     )
     db.add(new_rt)
     db.commit()
-
     access = create_access_token(user_id=user.id, wallet=user.wallet_address)
+
+    # 프론트에 새로운 access_token과 refresh_token 전달 후 로그인 작업 종료
     return TokenPairResponse(
         access_token=access,
         refresh_token=new_plain,
@@ -173,11 +214,24 @@ def post_refresh(body: RefreshRequest, db: Session = Depends(get_db)) -> TokenPa
     )
 
 
+# ---------------------------------------------------------------------------------
+
+
+# POST /auth/logout
+# 프론트로부터 리프레시 토큰을 받아 사용 불가 처리해 로그아웃 구현
+'''
+출력 예시
+{
+  "loggedOut": true
+}
+'''
 @router.post("/logout")
 def post_logout(body: LogoutRequest, db: Session = Depends(get_db)) -> dict[str, str]:
+    # 프론트로부터 현재 유저의 리프레시 토큰을 받아 DB에서 대조
     token = (body.refresh_token or "").strip()
     if not token:
         raise AppError("BAD_REQUEST", "refreshToken 이 필요합니다.", 400)
+    # 프론트에서 보낸 리프레시 토큰을 revoked 처리 (폐기하지 않고 데이터를 남겨놓아야 로그아웃 시간 기록 가능)
     rt = db.scalars(select(RefreshToken).where(RefreshToken.token == token).limit(1)).first()
     if rt is not None:
         rt.revoked = True

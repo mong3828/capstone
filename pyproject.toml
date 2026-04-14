@@ -1,4 +1,4 @@
-# 후속 주차에서 프로젝트 패키징 작업시 setuptools 사용 예정
+# 프로젝트 패키징 작업시 setuptools 사용
 [build-system]
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
