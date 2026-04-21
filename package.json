@@ -1,5 +1,5 @@
 {
-  "name": "b2mark-contracts",
+  "name": "mintmark-contracts",
   "private": true,
   "scripts": {
     "compile": "hardhat compile",

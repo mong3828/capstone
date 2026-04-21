@@ -7,6 +7,6 @@ from __future__ import annotations
 
 import os
 
-os.environ.setdefault("B2MARK_JWT_SECRET", "pytest-b2mark-jwt-secret-key-min-32")
+os.environ.setdefault("MINTMARK_JWT_SECRET", "pytest-mintmark-jwt-secret-key-min-32")
 # 하드디스크가 아니라 컴퓨터의 메모리(RAM) 상에 1회용 가짜 DB 생성
-os.environ.setdefault("B2MARK_DATABASE_URL", "sqlite:///:memory:")
+os.environ.setdefault("MINTMARK_DATABASE_URL", "sqlite:///:memory:")

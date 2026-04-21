@@ -278,7 +278,7 @@ def detect(
 
 
 # 워터마킹에 사용되는 설정값을 세팅하는 클래스
-#   secret_key 는 호출부에서 반드시 넣거나, CLI/API 가 B2MARK_WATERMARK_SECRET_KEY 에서 읽어 전달
+#   secret_key 는 호출부에서 반드시 넣거나, CLI/API 가 MINTMARK_WATERMARK_SECRET_KEY 에서 읽어 전달
 @dataclass(frozen=True, slots=True)
 class WatermarkOptions:
     secret_key: str = ""

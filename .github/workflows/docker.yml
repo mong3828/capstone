@@ -14,4 +14,4 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build Docker image
-        run: docker build -t b2mark-api:ci .
+        run: docker build -t mintmark-api:ci .

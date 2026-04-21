@@ -54,11 +54,11 @@ def read_upload_limited(file: UploadFile) -> bytes:
 # 워터마킹 작업에 사용할 키 값을 설정하는 함수
 def resolve_watermark_secret(secret_key: str | None) -> str:
     # 프론트에서 API로 폼에 키 값을 제공한 경우 해당 값을 사용하고, 없다면 환경 변수 값을 사용
-    effective = (secret_key or "").strip() or os.environ.get("B2MARK_WATERMARK_SECRET_KEY", "").strip()
+    effective = (secret_key or "").strip() or os.environ.get("MINTMARK_WATERMARK_SECRET_KEY", "").strip()
     if not effective:
         raise AppError(
             "BAD_REQUEST",
-            "secret_key 폼 값 또는 환경변수 B2MARK_WATERMARK_SECRET_KEY 가 필요합니다.",
+            "secret_key 폼 값 또는 환경변수 MINTMARK_WATERMARK_SECRET_KEY 가 필요합니다.",
             400,
         )
     return effective

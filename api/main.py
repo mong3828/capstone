@@ -33,7 +33,7 @@ async def lifespan(_app: FastAPI):
     yield
 
 # 서버 정보 세팅
-app = FastAPI(title="B2MARK API", version=API_VERSION, lifespan=lifespan)
+app = FastAPI(title="MintMark API", version=API_VERSION, lifespan=lifespan)
 handler = Mangum(app)
 
 # errors.py에서 정의한 핸들러 3개 등록
@@ -64,7 +64,7 @@ app.include_router(nfts.router)
 # 서버 상태 확인
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "service": "b2mark"}
+    return {"status": "ok", "service": "mintmark"}
 
 
 # 워터마킹 작업(api/watermark_service.py 호출)
@@ -77,7 +77,7 @@ def post_watermark(
     ref_cols: str = Form(..., description="참조 열, 쉼표 구분"),
     secret_key: str | None = Form(
         default=None,
-        description="워터마크 비밀키 (미입력 시 B2MARK_WATERMARK_SECRET_KEY)",
+        description="워터마크 비밀키 (미입력 시 MINTMARK_WATERMARK_SECRET_KEY)",
     ),
     k: int = Form(10, description="구간 개수 k"),
     g: int = Form(3, description="선별 분모 g"),

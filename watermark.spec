@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['C:\\Users\\user\\Downloads\\cursor\\B2MARK\\cli\\main.py'],
+    ['C:\\Users\\user\\Downloads\\cursor\\MintMark\\cli\\main.py'],
     pathex=[],
     binaries=[],
     datas=[],

@@ -1,5 +1,5 @@
-# 빌드: docker build -t b2mark-api .
-# 실행: docker run -p 8000:8000 -e B2MARK_SECRET_KEY=... b2mark-api
+# 빌드: docker build -t mintmark-api .
+# 실행: docker run -p 8000:8000 -e MINTMARK_SECRET_KEY=... mintmark-api
 
 FROM python:3.11-slim-bookworm
 

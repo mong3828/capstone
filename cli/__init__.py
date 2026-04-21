@@ -1,1 +1,1 @@
-"""B2MARK CLI"""
+"""MintMark CLI"""

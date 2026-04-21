@@ -7,9 +7,9 @@ build-backend = "setuptools.build_meta"
 
 # 프로젝트 정보 및 필수 라이브러리
 [project]
-name = "b2mark"
+name = "mintmark"
 version = "0.6.0"
-description = "B2MARK 워터마킹·검출"
+description = "MintMark 워터마킹·검출"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

@@ -43,7 +43,7 @@ NONCE_TTL = timedelta(minutes=15)
 출력 예시
 {
   "nonce": "d43b9cd2a1a047f5a8c16e0edd9f3a62",
-  "message": "B2MARK 로그인 요청\n지갑: 0x33403E93FeDD45250CB32bdc35B2D782A871a19e\nnonce: d43b9cd2a1a047f5a8c16e0edd9f3a62\n만료(UTC): 2026-04-13T01:49:09.801963+00:00",
+  "message": "MintMark 로그인 요청\n지갑: 0x33403E93FeDD45250CB32bdc35B2D782A871a19e\nnonce: d43b9cd2a1a047f5a8c16e0edd9f3a62\n만료(UTC): 2026-04-13T01:49:09.801963+00:00",
   "expiresAt": "2026-04-13T01:49:09.801963Z"
 }
 '''
@@ -61,7 +61,7 @@ def post_nonce(body: NonceRequest, db: Session = Depends(get_db)) -> NonceRespon
     expires_at = datetime.now(timezone.utc) + NONCE_TTL
     # 유저가 서명할 텍스트 메시지 생성
     msg = (
-        "B2MARK 로그인 요청\n"
+        "MintMark 로그인 요청\n"
         f"지갑: {wallet}\n"
         f"nonce: {nonce}\n"
         f"만료(UTC): {expires_at.replace(tzinfo=timezone.utc).isoformat()}"

@@ -1,4 +1,4 @@
-# B2MARK
+# MintMark
 
 안전한 데이터 유통을 위한 **워터마킹·검출·소유권 관리** 도구 (로컬 엔진 + CLI + 추후 웹/API).
 
@@ -6,6 +6,7 @@
 
 | 문서 | 설명 |
 |------|------|
+| [docs/API_명세서.md](./docs/API_명세서.md) | **REST API 명세 (프론트 연동용)** |
 | [12주_개발_계획.md](./12주_개발_계획.md) | 주차별 목표·산출물 |
 | [설계문서.md](./설계문서.md) | 전체 설계·로컬 중심 원칙 |
 | [docs/scope_alignment.md](./docs/scope_alignment.md) | 설계문서 vs 12주 계획(웹/API) 정렬 |
@@ -19,7 +20,7 @@
 ## 프로젝트 구조
 
 ```text
-B2MARK/
+MintMark/
   pyproject.toml
   package.json         # Hardhat + OpenZeppelin (7주차 컨트랙트)
   contracts/
@@ -38,9 +39,9 @@ B2MARK/
 ## 로컬 실행
 
 ```powershell
-cd B2MARK
+cd MintMark
 copy .env.example .env
-# .env 에 B2MARK_WATERMARK_SECRET_KEY 등 필요한 값을 채움 (Git 에 올리지 않음)
+# .env 에 MINTMARK_WATERMARK_SECRET_KEY 등 필요한 값을 채움 (Git 에 올리지 않음)
 python -m pip install -e ".[dev]"
 npm install
 python -m pytest
@@ -59,8 +60,8 @@ npx hardhat test
 
 ### 온체인 mint (8주차)
 
-`.env` 에 `B2MARK_RPC_URL`, `B2MARK_CONTRACT_ADDRESS`, `B2MARK_ADMIN_PRIVATE_KEY` 를 두고,
-(선택) `B2MARK_USER_PRIVATE_KEY` 로 민팅 가스만 다른 지갑에 둘 수 있습니다.
+`.env` 에 `MINTMARK_RPC_URL`, `MINTMARK_CONTRACT_ADDRESS`, `MINTMARK_ADMIN_PRIVATE_KEY` 를 두고,
+(선택) `MINTMARK_USER_PRIVATE_KEY` 로 민팅 가스만 다른 지갑에 둘 수 있습니다.
 
 ```powershell
 watermark mint -i .\out.csv --metadata-uri ipfs://Qm.../meta.json
@@ -68,7 +69,7 @@ watermark mint -i .\out.csv --metadata-uri ipfs://Qm.../meta.json
 
 가이드: `docs/week8_user_guide.txt`
 
-**Git:** 원격 CI를 쓰려면 저장소 **루트를 `B2MARK` 폴더**로 두는 것이 좋습니다 (`.github` 위치).
+**Git:** 원격 CI를 쓰려면 저장소 **루트를 `MintMark` 폴더**로 두는 것이 좋습니다 (`.github` 위치).
 
 ## 현재 상태
 

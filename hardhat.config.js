@@ -14,13 +14,13 @@ module.exports = {
       optimizer: { enabled: true, runs: 200 },
     },
   },
-  // Sepolia 배포: .env 의 B2MARK_ADMIN_PRIVATE_KEY (Sepolia ETH 보유 지갑)
+  // Sepolia 배포: .env 의 MINTMARK_ADMIN_PRIVATE_KEY (Sepolia ETH 보유 지갑)
   // npx hardhat run scripts/deploy_DataAsset.js --network sepolia
   networks: {
     sepolia: {
-      url: process.env.B2MARK_RPC_URL || "",
-      accounts: process.env.B2MARK_ADMIN_PRIVATE_KEY
-        ? [process.env.B2MARK_ADMIN_PRIVATE_KEY]
+      url: process.env.MINTMARK_RPC_URL || "",
+      accounts: process.env.MINTMARK_ADMIN_PRIVATE_KEY
+        ? [process.env.MINTMARK_ADMIN_PRIVATE_KEY]
         : [],
     },
   },

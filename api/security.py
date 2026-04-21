@@ -18,17 +18,17 @@ from eth_utils import to_checksum_address
 # =================================================================================
 
 
-# B2MARK_JWT_SECRET: 사용자 인증에 사용되는 서버의 비밀 키 값
+# MINTMARK_JWT_SECRET: 사용자 인증에 사용되는 서버의 비밀 키 값
 JWT_ALG = "HS256"
-ACCESS_MINUTES = int(os.environ.get("B2MARK_JWT_ACCESS_MINUTES", "15"))
-REFRESH_DAYS = int(os.environ.get("B2MARK_JWT_REFRESH_DAYS", "30"))
+ACCESS_MINUTES = int(os.environ.get("MINTMARK_JWT_ACCESS_MINUTES", "15"))
+REFRESH_DAYS = int(os.environ.get("MINTMARK_JWT_REFRESH_DAYS", "30"))
 
 
-# 환경변수 파일에 B2MARK_JWT_SECRET 값이 설정되어 있지 않으면 서버 종료
+# 환경변수 파일에 MINTMARK_JWT_SECRET 값이 설정되어 있지 않으면 서버 종료
 def _jwt_secret() -> str:
-    s = os.environ.get("B2MARK_JWT_SECRET", "").strip()
+    s = os.environ.get("MINTMARK_JWT_SECRET", "").strip()
     if not s:
-        raise RuntimeError("B2MARK_JWT_SECRET 가 설정되어 있지 않습니다.")
+        raise RuntimeError("MINTMARK_JWT_SECRET 가 설정되어 있지 않습니다.")
     return s
 
 

@@ -116,7 +116,7 @@ def test_cli_insert_help():
 # hash 명령어가 에러 없이 정상적으로 64자리 결과값을 만드는지 간략히 확인
 def test_cli_hash_only(tmp_path: Path):
     f = tmp_path / "blob.bin"
-    f.write_bytes(b"b2mark-week4")
+    f.write_bytes(b"mintmark-week4")
     r = _run_cli(["hash", "-i", str(f)], cwd=tmp_path)
     assert r.returncode == 0
     line = (r.stdout or "").strip().splitlines()[-1]

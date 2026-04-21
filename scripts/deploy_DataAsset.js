@@ -1,7 +1,7 @@
 /**
  * DataAsset 배포 (Sepolia)
  *
- * .env: B2MARK_RPC_URL, B2MARK_ADMIN_PRIVATE_KEY (가스·배포·Owner·authorizedSigner 모두 동일 지갑)
+ * .env: MINTMARK_RPC_URL, MINTMARK_ADMIN_PRIVATE_KEY (가스·배포·Owner·authorizedSigner 모두 동일 지갑)
  *
  * 생성자(initialOwner, authorizedSigner) 는 배포 지갑 주소로 동일 설정합니다.
  */
@@ -18,7 +18,7 @@ async function main() {
   await contract.waitForDeployment();
   const deployed = await contract.getAddress();
   console.log("DataAsset deployed to:", deployed);
-  console.log("Set B2MARK_CONTRACT_ADDRESS=" + deployed + " in .env for CLI mint.");
+  console.log("Set MINTMARK_CONTRACT_ADDRESS=" + deployed + " in .env for CLI mint.");
 }
 
 main().catch((e) => {

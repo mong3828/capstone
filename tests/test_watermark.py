@@ -10,7 +10,7 @@ import pandas as pd
 from core.watermark import WatermarkOptions, detect, insert
 
 # 가상의 부동산 데이터에 대해 워터마크 삽입-검출 테스트
-def test_b2mark_embed_returns_metadata_and_detect(tmp_path: Path):
+def test_mintmark_embed_returns_metadata_and_detect(tmp_path: Path):
     df = pd.DataFrame(
         {
             "area": [80, 85, 90, 95, 100],
