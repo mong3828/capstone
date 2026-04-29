@@ -26,7 +26,9 @@ logger = logging.getLogger(__name__)
 
 
 # 터미널에 쉼표로 입력된 데이터(예: area, floor, ...)를 튜플 형식으로 바꾸는 함수
-def parse_ref_cols(s: str) -> tuple[str, ...]:
+def parse_ref_cols(s: str | None) -> tuple[str, ...] | None:
+    if s is None:
+        return None
     parts = [p.strip() for p in s.split(",")]
     return tuple(p for p in parts if p)
 
@@ -69,8 +71,8 @@ def watermark_csv_bytes(
     raw: bytes,
     *,
     buyer_id: str,
-    target: str,
-    ref_cols: str,
+    target: str | None,
+    ref_cols: str | None,
     secret_key: str,
     k: int,
     g: int,
@@ -80,10 +82,6 @@ def watermark_csv_bytes(
 ) -> bytes:
     # 이하 csv 파일 행, 열 관련 검사 ----------------------------------------------------
     ref_tuple = parse_ref_cols(ref_cols)
-
-    # 워터마킹을 적용할 열이 설정되지 않음
-    if not ref_tuple:
-        raise AppError("BAD_REQUEST", "ref_cols 에 최소 한 개의 열이 필요합니다.", 400)
     
     # 워터마킹 작업을 수행할 임시 파일(tmp_in, tmp_out) 생성
     tmp_in: str | None = None

@@ -123,3 +123,31 @@ class NftListResponse(BaseModel):
     page_size: int = Field(..., serialization_alias="pageSize")
 
     model_config = ConfigDict(populate_by_name=True)
+
+
+class MarketplaceNftOut(BaseModel):
+    id: str
+    name: str
+    description: str | None = None
+    creator_name: str = Field(..., serialization_alias="creatorName")
+    owner_address: str = Field(..., serialization_alias="ownerAddress")
+    purchase_available: bool = Field(..., serialization_alias="purchaseAvailable")
+    status: str
+    chain_id: int = Field(..., serialization_alias="chainId")
+    contract_address: str | None = Field(default=None, serialization_alias="contractAddress")
+    token_id: str | None = Field(default=None, serialization_alias="tokenId")
+    thumbnail_url: str | None = Field(default=None, serialization_alias="thumbnailUrl")
+    metadata_uri: str | None = Field(default=None, serialization_alias="metadataUri")
+    created_at: datetime = Field(..., serialization_alias="createdAt")
+    updated_at: datetime = Field(..., serialization_alias="updatedAt")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class MarketplaceNftListResponse(BaseModel):
+    items: list[MarketplaceNftOut]
+    total: int
+    page: int
+    page_size: int = Field(..., serialization_alias="pageSize")
+
+    model_config = ConfigDict(populate_by_name=True)

@@ -16,7 +16,7 @@ from mangum import Mangum
 
 from api.database import Base, engine
 from api.errors import register_exception_handlers
-from api.routers import auth, nfts, users
+from api.routers import auth, marketplace, nfts, users
 from api.watermark_service import read_upload_limited, resolve_watermark_secret, watermark_csv_bytes
 
 
@@ -53,6 +53,7 @@ app.add_middleware(
 # auth.py, users.py, nfts.py와의 라우터 연결
 app.include_router(auth.router)
 app.include_router(users.router)
+app.include_router(marketplace.router)
 app.include_router(nfts.router)
 
 # =================================================================================
@@ -73,8 +74,8 @@ def post_watermark(
     request: Request,
     file: UploadFile = File(..., description="원본 CSV"),
     buyer_id: str = Form(..., description="구매자 비트열"),
-    target: str = Form(..., description="워터마크 대상 열"),
-    ref_cols: str = Form(..., description="참조 열, 쉼표 구분"),
+    target: str | None = Form(default=None, description="워터마크 대상 열 (미입력 시 자동 탐지)"),
+    ref_cols: str | None = Form(default=None, description="참조 열, 쉼표 구분 (미입력 시 자동 탐지)"),
     secret_key: str | None = Form(
         default=None,
         description="워터마크 비밀키 (미입력 시 MINTMARK_WATERMARK_SECRET_KEY)",
