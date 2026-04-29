@@ -88,7 +88,7 @@ def create_nft(
 # ---------------------------------------------------------------------------------
 
 
-# GET /nfts
+# GET /nfts/private
 # 프론트엔드의 페이지네이션을 고려하여 사용자 소유의 nft 목록 불러오기
 '''
 출력 예시
@@ -121,7 +121,7 @@ def create_nft(
   "pageSize": 20
 }
 '''
-@router.get("", response_model=NftListResponse)
+@router.get("/private", response_model=NftListResponse)
 def list_nfts(
     user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
@@ -270,8 +270,8 @@ def watermark_nft(
     db: Annotated[Session, Depends(get_db)],
     file: UploadFile = File(...),
     buyer_id: str = Form(...),
-    target: str = Form(...),
-    ref_cols: str = Form(...),
+    target: str | None = Form(default=None),
+    ref_cols: str | None = Form(default=None),
     secret_key: str | None = Form(default=None),
     k: int = Form(10),
     g: int = Form(3),
