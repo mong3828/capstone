@@ -97,6 +97,56 @@ def _bit_index(secret_key: str, comp_key: str, num_bits: int) -> int:
     return hash_mod(secret_key, f"bit:{comp_key}", num_bits)
 
 
+def get_numeric_columns(df: pd.DataFrame) -> list[str]:
+    cols = list(df.select_dtypes(include=["number"]).columns)
+    id_keywords = {"id", "index", "idx", "number", "no", "seq", "count", "cnt", "code", "key", "pk"}
+    time_keywords = {"date", "time", "datetime", "year", "month", "day", "hour", "minute", "timestamp", "epoch"}
+    scored: list[tuple[str, float]] = []
+    for col in cols:
+        low_name = col.lower()
+        if any(k in low_name for k in id_keywords):
+            continue
+        if any(k in low_name for k in time_keywords):
+            continue
+        series = df[col].dropna()
+        if series.empty:
+            continue
+        col_range = float(series.max() - series.min())
+        if col_range < 1.0:
+            continue
+        scored.append((col, col_range))
+    scored.sort(key=lambda x: x[1], reverse=True)
+    return [c for c, _ in scored]
+
+
+def get_categorical_columns(df: pd.DataFrame) -> list[str]:
+    cols = list(df.select_dtypes(include=["object", "string", "category"]).columns)
+    scored: list[tuple[str, int]] = []
+    for col in cols:
+        nunique = int(df[col].nunique(dropna=True))
+        if nunique < 2 or nunique > 1000:
+            continue
+        scored.append((col, nunique))
+    scored.sort(key=lambda x: x[1])
+    return [c for c, _ in scored]
+
+
+def auto_detect_columns(df: pd.DataFrame) -> tuple[str, tuple[str, ...]]:
+    numeric_cols = get_numeric_columns(df)
+    if not numeric_cols:
+        raise ValueError("워터마킹에 적합한 numeric 열을 찾을 수 없습니다.")
+    target_col = numeric_cols[0]
+
+    categ_cols = get_categorical_columns(df)
+    if categ_cols:
+        refs = tuple(categ_cols[:2])
+    else:
+        refs = tuple(c for c in numeric_cols if c != target_col)[:2]
+    if not refs:
+        raise ValueError("참조 열(ref_cols)을 찾을 수 없습니다.")
+    return target_col, refs
+
+
 # =================================================================================
 # 파트2 - zone 분할
 # =================================================================================
@@ -127,6 +177,17 @@ def generate_green_domains(min_val: float, max_val: float, k: int, seed: int) ->
 # 파트3 - 워터마킹 삽입
 # =================================================================================
 
+
+def _read_csv_with_encoding(file_path: str | Path) -> pd.DataFrame:
+    # 팀원 알고리즘의 장점 반영: 다양한 인코딩 CSV를 읽을 수 있게 폴백 처리
+    encodings = ["utf-8", "cp949", "euc-kr", "latin-1", "iso-8859-1"]
+    for encoding in encodings:
+        try:
+            return pd.read_csv(file_path, encoding=encoding)
+        except (UnicodeDecodeError, LookupError):
+            continue
+    return pd.read_csv(file_path, encoding="utf-8", encoding_errors="ignore")
+
 def insert(
     input_path: str | Path,
     output_path: str | Path,
@@ -134,8 +195,15 @@ def insert(
 ) -> EmbedResult:
     
     # CSV 파일 불러오기
-    buyer_bitstring, target_col, ref_cols = _validate_options(options)
-    df = pd.read_csv(input_path)
+    buyer_bitstring = _validate_common_options(options)
+    df = _read_csv_with_encoding(input_path)
+
+    target_col = options.target_col
+    ref_cols = options.ref_cols
+    if not target_col or not ref_cols:
+        auto_target, auto_refs = auto_detect_columns(df)
+        target_col = target_col or auto_target
+        ref_cols = ref_cols or auto_refs
 
     # 불러온 CSV 파일에 워터마킹을 적용할 대상 열이 존재하지 않는 경우 오류 처리
     if target_col not in df.columns:
@@ -192,7 +260,17 @@ def insert(
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(output_path, index=False)
-    return EmbedResult(metadata={"min": d_min, "max": d_max, "seed": seed})
+    return EmbedResult(
+        metadata={
+            "min": d_min,
+            "max": d_max,
+            "seed": seed,
+            "target_col": target_col,
+            "ref_cols": list(ref_cols),
+            "k": options.k,
+            "g": options.g,
+        }
+    )
 
 
 # =================================================================================
@@ -217,18 +295,24 @@ def detect(
     embed_metadata: dict | None = None,
 ) -> DetectionResult:
     
-    buyer_bitstring, target_col, ref_cols = _validate_options(options)
+    buyer_bitstring = _validate_common_options(options)
+    if not options.target_col or not options.ref_cols:
+        raise ValueError("detect 에서는 target_col, ref_cols 가 필수입니다.")
+    target_col = options.target_col
+    ref_cols = list(options.ref_cols)
     if embed_metadata is None:
         raise ValueError("검출에는 삽입 시 반환된 metadata(dict: min, max, seed)가 필요합니다.")
     bit_length = len(buyer_bitstring)
 
     # 메타데이터 파일에서 최솟값, 최댓값, 시드 불러오기
-    df = pd.read_csv(input_path)
+    df = _read_csv_with_encoding(input_path)
     d_min = embed_metadata["min"]
     d_max = embed_metadata["max"]
     seed = embed_metadata["seed"]
+    k = embed_metadata.get("k", options.k)
+    g = embed_metadata.get("g", options.g)
     # green-red zone 범위 계산
-    green_domains = generate_green_domains(d_min, d_max, options.k, seed)
+    green_domains = generate_green_domains(d_min, d_max, k, seed)
 
     # 각 데이터가 1.워터마킹 대상이었는지, 2.대상이었다면 구매자 ID의 몇번째 비트를 담당했는지 추적
     bit_stats = {i: {"green": 0, "total": 0} for i in range(bit_length)}
@@ -236,7 +320,7 @@ def detect(
     for idx in df.index:
         comp_key = _composite_key(df.loc[idx], ref_cols)
         bit_idx = _bit_index(options.secret_key, comp_key, bit_length)
-        if not _is_selected(options.secret_key, comp_key, options.g):
+        if not _is_selected(options.secret_key, comp_key, g):
             continue
         val = float(df.loc[idx, target_col])
         # 워터마킹 대상이 맞다면 total값 1 증가
@@ -303,9 +387,9 @@ class DetectionResult:
     detected_bitstring: str | None = None
 
 # 워터마킹 작업 전 구매자 ID, 워터마킹을 적용할 열, 기준 열 중 빠진 부분이 있는지 검사하는 함수
-def _validate_options(options: WatermarkOptions) -> tuple[str, str, list[str]]:
+def _validate_common_options(options: WatermarkOptions) -> str:
     if not options.secret_key:
         raise ValueError("secret_key 는 필수입니다.")
-    if not options.buyer_bitstring or not options.target_col or not options.ref_cols:
-        raise ValueError("buyer_bitstring, target_col, ref_cols 는 필수입니다.")
-    return options.buyer_bitstring, options.target_col, list(options.ref_cols)
+    if not options.buyer_bitstring:
+        raise ValueError("buyer_bitstring 은 필수입니다.")
+    return options.buyer_bitstring

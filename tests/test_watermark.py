@@ -91,3 +91,30 @@ def test_detect_stable_after_row_reorder(tmp_path: Path):
     r1 = detect(out, opts, embed_metadata=er.metadata)
     r2 = detect(reordered, opts, embed_metadata=er.metadata)
     assert r1.detected_bitstring == r2.detected_bitstring
+
+
+def test_insert_auto_detect_columns_when_target_and_ref_missing(tmp_path: Path):
+    df = pd.DataFrame(
+        {
+            "category": ["A", "B", "A", "C", "B", "C"],
+            "region": ["Seoul", "Busan", "Daegu", "Seoul", "Incheon", "Busan"],
+            "amount": [1200.0, 1500.0, 1700.0, 2100.0, 1900.0, 2500.0],
+            "tax": [120.0, 150.0, 170.0, 210.0, 190.0, 250.0],
+        }
+    )
+    inp = tmp_path / "in.csv"
+    out = tmp_path / "out.csv"
+    df.to_csv(inp, index=False)
+    opts = WatermarkOptions(
+        secret_key="grad_project_key",
+        buyer_bitstring="10110",
+        target_col=None,
+        ref_cols=None,
+        k=10,
+        g=3,
+        embed_seed=10000,
+    )
+    er = insert(inp, out, opts)
+    assert er.metadata is not None
+    assert er.metadata.get("target_col") is not None
+    assert isinstance(er.metadata.get("ref_cols"), list) and len(er.metadata.get("ref_cols")) >= 1

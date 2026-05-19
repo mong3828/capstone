@@ -1,6 +1,6 @@
 # =================================================================================
 # 파일명:   database.py
-# 목적:     SQLite 세션 연결
+# 목적:     DB 세션 연결 (로컬 SQLite 기본, MINTMARK_DATABASE_URL로 RDS 등 지정)
 # =================================================================================
 
 from __future__ import annotations
@@ -17,20 +17,37 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 _REPO = Path(__file__).resolve().parents[1]
 
-# 본 프로젝트 폴더 내에 data 디렉토리 생성 후 'mintmark.sqlite' DB 파일 생성
-_DATA = _REPO / "data"
-_DATA.mkdir(parents=True, exist_ok=True)
-_DEFAULT_SQLITE = f"sqlite:///{_DATA / 'mintmark.sqlite'}"
 # 추후 AWS 등 외부 서비스와의 연계를 고려해 URL 환경변수에 DB 주소를 받을 수 있게 설계함
-DATABASE_URL = os.environ.get("MINTMARK_DATABASE_URL", _DEFAULT_SQLITE)
+DATABASE_URL = os.environ.get("MINTMARK_DATABASE_URL", "").strip()
+if not DATABASE_URL:
+    # 로컬 기본값: 프로젝트 내부 data/mintmark.sqlite
+    _DATA = _REPO / "data"
+    _DATA.mkdir(parents=True, exist_ok=True)
+    DATABASE_URL = f"sqlite:///{_DATA / 'mintmark.sqlite'}"
 
 # DB 테이블 양식 구현은 pass
 class Base(DeclarativeBase):
     pass
 
 # 백엔드 서버와 DB 간 연결을 위한 engine 선언
-_connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-engine = create_engine(DATABASE_URL, connect_args=_connect_args)
+def _create_engine():
+    url = DATABASE_URL
+    if url.startswith("sqlite"):
+        return create_engine(
+            url,
+            connect_args={"check_same_thread": False},
+        )
+    if url.startswith(("postgresql", "postgres")):
+        # RDS 등: 끊긴 연결 복구, 유휴 연결 정리(프록시/idle 타임아웃 완화)
+        return create_engine(
+            url,
+            pool_pre_ping=True,
+            pool_recycle=280,
+        )
+    return create_engine(url)
+
+
+engine = _create_engine()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # DB 세션 관리 함수

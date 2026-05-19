@@ -189,7 +189,7 @@ document.getElementById("btnNftList").onclick = async () => {
     let q = `?page=${encodeURIComponent(page)}&pageSize=${encodeURIComponent(pageSize)}`;
     if (st) q += `&status=${encodeURIComponent(st)}`;
     if (chainId) q += `&chainId=${encodeURIComponent(chainId)}`;
-    const data = await apiJson(`/nfts${q}`, { token: accessToken });
+    const data = await apiJson(`/nfts/private${q}`, { token: accessToken });
     log(data);
   } catch (e) {
     log(String(e));
